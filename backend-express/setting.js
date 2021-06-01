@@ -2,7 +2,8 @@ const fs = require('fs');
 
 const cert = {
   key: fs.readFileSync(__dirname + '/private.pem'),
-  cert:  fs.readFileSync(__dirname + '/public.pem')
+  cert:  fs.readFileSync(__dirname + '/public.pem'), 
+  alpn: 'h3' 
 }
 
 const port_http2 = 9000
