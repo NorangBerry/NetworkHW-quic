@@ -13,3 +13,9 @@ server_http2.on('stream', (stream, headers) => {
   });
   stream.end(html);
 });
+
+server_http3.on('session', async (session) => {
+  session.on('stream', (stream) => {
+    stream.end(html)
+  });
+});

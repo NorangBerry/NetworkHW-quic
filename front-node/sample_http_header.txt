@@ -1,0 +1,6 @@
+GET / HTTP/3.0
+User-Agent: Mozilla/5.0 (compatible; MSIE5.01; Windows NT)
+Host: www.tutorialspoint.com
+Accept-Language: en-us
+Accept-Encoding: gzip, deflate
+Connection: Keep-Alive
