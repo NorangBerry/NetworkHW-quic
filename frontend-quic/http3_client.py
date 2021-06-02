@@ -120,7 +120,8 @@ async def perform_http_request(
 	start = time.time()
 	http_events = await client.get(url)
 	elapsed = time.time() - start
-	print(f'http3: {elapsed*1000}')
+	parsed = urlparse(url)
+	print(f'http3/{parsed.path}: {elapsed*1000}')
 
 	# print speed
 	octets = 0

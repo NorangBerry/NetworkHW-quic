@@ -17,7 +17,7 @@ from aioquic.h3.connection import H3_ALPN, H3Connection
 
 HTTP2_URLS=['https://172.17.90.8:8000']
 HTTP3_URLS=['https://172.17.90.8:8001']
-PATHS = ['/']
+PATHS = ['/','/image']
 async def quic():
 	configuration = QuicConfiguration(
 		is_client=True, alpn_protocols= H3_ALPN
@@ -34,9 +34,9 @@ async def http2():
 		for url in HTTP2_URLS:
 			before = datetime.datetime.now()
 			for path in PATHS:
-				await client.get(f'{url}{path}')
+				res = await client.get(f'{url}{path}')
 				after = datetime.datetime.now()
-				print(f'http2: {(after-before).total_seconds() * 1000}')
+				print(f'http2/{path}: {(after-before).total_seconds() * 1000}')
 
 
 if __name__ == "__main__":
