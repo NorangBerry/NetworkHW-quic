@@ -172,10 +172,10 @@ def save_session_ticket(ticket: SessionTicket) -> None:
 	"""
 
 async def run(
-	configuration: QuicConfiguration
+	configuration: QuicConfiguration,
+	url:str
 ) -> None:
 	# parse URL
-	url = 'https://192.168.0.2:8001/'
 	parsed = urlparse(url)
 	assert parsed.scheme in (
 		"https",
