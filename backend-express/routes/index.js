@@ -4,19 +4,27 @@ const fs = require('fs');
 const mime = require("mime");
 
 const html = fs.readFileSync(__dirname + '/../sample.html','utf8');
-const image = fs.createReadStream(__dirname + '/../sample.jpg');
+var image = fs.createReadStream(__dirname + '/../sample.jpg');
 
 
 const sendFile = (stream, fileName) => {
-  var s = fs.createReadStream(fileName);
-  s.on('open', function () {
-      stream.respond({
-        'Content-Type': 'image/jpeg',
-        ':status': 200,
-        'Access-Control-Allow-Origin': '*'
-      });
-      s.pipe(stream);
+  stream.respond({
+    'Content-Type': 'image/jpeg',
+    ':status': 200,
+    'Access-Control-Allow-Origin': '*',
+    'Cache-Control':'no-cache, no-store, must-revalidate'
   });
+  image.pipe(stream)
+  image = fs.createReadStream(__dirname + '/../sample.jpg');
+  // var s = fs.createReadStream(fileName);
+  // s.on('open', function () {
+  //     stream.respond({
+  //       'Content-Type': 'image/jpeg',
+  //       ':status': 200,
+  //       'Access-Control-Allow-Origin': '*'
+  //     });
+  //     s.pipe(stream);
+  // });
 };
 
 server_http2.on('stream',async (stream, headers) => {
@@ -49,10 +57,8 @@ server_http3.on('session', async (session) => {
         stream.end(html)
       }
       else if(path == '/image'){
-        var s = fs.createReadStream(__dirname + '/../sample.jpg');
-        s.on('open', function () {
-            s.pipe(stream);
-        });
+        image.pipe(stream)
+        image = fs.createReadStream(__dirname + '/../sample.jpg');
       }
     });
   });
