@@ -4,3 +4,4 @@ node_modules
 backend-express/private.pem
 backend-express/public.crt
 backend-express/public.pem
+front-node/public.pem
