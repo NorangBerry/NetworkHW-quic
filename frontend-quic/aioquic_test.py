@@ -47,7 +47,7 @@ def write_csv(ret_tcp,ret_quic):
 		writer.writerow(ret_quic)
 
 if __name__ == "__main__":
-	for i in range(5):
+	for i in range(100):
 		http2_loop = asyncio.new_event_loop()
 		ret_tcp = http2_loop.run_until_complete(
 					http2(i)
