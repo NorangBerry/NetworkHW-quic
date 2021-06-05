@@ -1,69 +1,106 @@
 const { createQuicSocket } = require('net');
-const axios = require('axios');
 const fs = require('fs');
-const https = require('https');
 const http2 = require('http2');
+const { setTimeout } = require('timers');
+const write_csv = require('./write_csv');
 const req_header = fs.readFileSync(__dirname + '/sample_http_header.txt','utf8');
 const req_header_image = fs.readFileSync(__dirname + '/sample_http_header_image.txt','utf8');
 
 const socket = createQuicSocket();
-// const URL = '192.168.0.2'
-const PORT2 = 9000
-const PORT3 = 9001
 
 HTTP2_URLS=['https://172.17.90.8:9000']
 HTTP3_URLS=['https://172.17.90.8:9001']
 PATHS = ['/','/image']
 
 async function main(){
-	await test_tcp()
-	await test_quic()
+	for(var i =0;i<100;i++){
+		const res_tcp = await test_tcp(i)
+		const res_quic = await test_quic(i)
+		write_csv(i,res_tcp,res_quic)
+		//10 min
+		await new Promise(resolve => setTimeout(resolve, 1000 * 60 * 10));
+	}
+	
 }
-async function test_tcp(){
+async function test_tcp(index){
 	const ca = fs.readFileSync(__dirname + "/public.pem")
-	HTTP2_URLS.forEach(url =>{
-		PATHS.forEach(path=>{
-			const client = http2.connect(url, {
-				ca: ca,
-				rejectUnauthorized: false
-			});
-			const req = client.request({
-				[http2.constants.HTTP2_HEADER_SCHEME]: "https",
-				[http2.constants.HTTP2_HEADER_METHOD]: http2.constants.HTTP2_METHOD_POST,
-				[http2.constants.HTTP2_HEADER_PATH]: path,
-			});
-			req.on('data', (chunk) => {
-			});
-			const before = new Date()
-			req.end();
-			req.on('end', () => {
-				const diff = new Date().getTime() - before.getTime()
-				console.log(`http2: ${path} : ${diff}`)
-			});
-		})
-	})
+	var res = {'INDEX':index,'TYPE':'HTTP2'}
+	for(var i =0;i<HTTP2_URLS.length;i++){
+		const url = HTTP2_URLS[i];
+		for(var j=0;j<PATHS.length;j++){
+			const path = PATHS[j];
+			res[`PATH${j}`] = `${url}${path}`
+			res[`TIME${j}`] = await send_tcp(ca,url,path)
+		}
+	}
+	return res;
 }
-async function test_quic(){
-	HTTP3_URLS.forEach(url =>{
-		PATHS.forEach(async (path)=> {
-			const req_path = new URL(`${url}${path}`)
-			const client = await socket.connect({address:req_path.hostname,port:req_path.port,alpn:'h3'})
-			const stream = await client.openStream();
-			stream.setEncoding('utf8');
-			stream.on('data', (data) => {
-			});
-			var req = req_header_image
-			if(path === '/'){
-				req = req_header
-			}
-			const before = new Date()
-			stream.end(req);
-			stream.on('end',() =>{
-				const diff = new Date().getTime() - before.getTime()
-				console.log(`http3: ${path} : ${diff}`)
-			})
-		});
+
+async function send_tcp(ca, url, path){
+	const client = http2.connect(url, {
+		ca: ca,
+		rejectUnauthorized: false
 	});
+	const req = client.request({
+		[http2.constants.HTTP2_HEADER_SCHEME]: "https",
+		[http2.constants.HTTP2_HEADER_METHOD]: http2.constants.HTTP2_METHOD_POST,
+		[http2.constants.HTTP2_HEADER_PATH]: path,
+	});
+	req.on('data', (chunk) => {
+	});
+
+	var get_res = false;
+	var diff = 0
+	const before = new Date()
+	req.end();
+	req.on('end', () => {
+		diff = new Date().getTime() - before.getTime()
+		console.log(`http2: ${path} : ${diff}`)
+		get_res = true
+	});
+	while(get_res == false){
+		await new Promise(resolve => setTimeout(resolve, 1000));
+	}
+	return diff;
+}
+
+async function test_quic(index){
+	var res = {INDEX:index,TYPE:'QUIC'}
+	for(var i =0;i<HTTP3_URLS.length;i++){
+		const url = HTTP3_URLS[i];
+		for(var j=0;j<PATHS.length;j++){
+			const path = PATHS[j];
+			res[`PATH${j}`] = `${url}${path}`
+			res[`TIME${j}`] = await send_quic(url,path)
+		}
+	}
+	return res;
+}
+
+async function send_quic(url,path){
+	const req_path = new URL(`${url}${path}`)
+	const client = await socket.connect({address:req_path.hostname,port:req_path.port,alpn:'h3'})
+	const stream = await client.openStream();
+	stream.setEncoding('utf8');
+	stream.on('data', (data) => {
+	});
+	var req = req_header_image
+	if(path === '/'){
+		req = req_header
+	}
+	var get_res = false
+	var diff = 0
+	const before = new Date()
+	stream.end(req);
+	stream.on('end',() =>{
+		diff = new Date().getTime() - before.getTime()
+		console.log(`http3: ${path} : ${diff}`)
+		get_res = true
+	})
+	while(get_res == false){
+		await new Promise(resolve => setTimeout(resolve, 1000));
+	}
+	return diff;
 }
 
 main()

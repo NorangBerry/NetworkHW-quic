@@ -128,6 +128,7 @@ async def perform_http_request(
 	for http_event in http_events:
 		if isinstance(http_event, DataReceived):
 			octets += len(http_event.data)
+	return int(elapsed*1000)
 			
 
 
@@ -201,10 +202,10 @@ async def run(
 				url=url,
 			)
 		]
-		await asyncio.gather(*coros)
-
+		ret = await asyncio.gather(*coros)
 		# process http pushes
 		process_http_pushes(client=client)
+		return ret[0]
 
 
 if __name__ == "__main__":
