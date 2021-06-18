@@ -8,8 +8,8 @@ const req_header_image = fs.readFileSync(__dirname + '/sample_http_header_image.
 
 const socket = createQuicSocket();
 
-HTTP2_URLS=['https://172.17.90.8:9000']
-HTTP3_URLS=['https://172.17.90.8:9001']
+HTTP2_URLS=['https://?:9000','https://??:9000']
+HTTP3_URLS=['https://?:9001','https://??:9001']
 PATHS = ['/','/image']
 
 async function main(){
@@ -17,21 +17,23 @@ async function main(){
 		const res_tcp = await test_tcp(i)
 		const res_quic = await test_quic(i)
 		write_csv(i,res_tcp,res_quic)
-		//10 min
-		await new Promise(resolve => setTimeout(resolve, 1000 * 60 * 10));
+		//1 min
+		await new Promise(resolve => setTimeout(resolve, 1000 * 60 * 1));
 	}
 	
 }
 async function test_tcp(index){
 	const ca = fs.readFileSync(__dirname + "/public.pem")
-	var res = {'INDEX':index,'TYPE':'HTTP2'}
+	var res = []
 	for(var i =0;i<HTTP2_URLS.length;i++){
 		const url = HTTP2_URLS[i];
+		var json = {'INDEX':index,'TYPE':'HTTP2',"URL":url}
 		for(var j=0;j<PATHS.length;j++){
 			const path = PATHS[j];
-			res[`PATH${j}`] = `${url}${path}`
-			res[`TIME${j}`] = await send_tcp(ca,url,path)
+			json[`PATH${j}`] = `${path}`
+			json[`TIME${j}`] = await send_tcp(ca,url,path)
 		}
+		res.push(json)
 	}
 	return res;
 }
@@ -65,14 +67,16 @@ async function send_tcp(ca, url, path){
 }
 
 async function test_quic(index){
-	var res = {INDEX:index,TYPE:'QUIC'}
+	var res = []
 	for(var i =0;i<HTTP3_URLS.length;i++){
 		const url = HTTP3_URLS[i];
+		var json = {'INDEX':index,'TYPE':'QUIC',"URL":url}
 		for(var j=0;j<PATHS.length;j++){
 			const path = PATHS[j];
-			res[`PATH${j}`] = `${url}${path}`
-			res[`TIME${j}`] = await send_quic(url,path)
+			json[`PATH${j}`] = `${path}`
+			json[`TIME${j}`] = await send_quic(url,path)
 		}
+		res.push(json)
 	}
 	return res;
 }
